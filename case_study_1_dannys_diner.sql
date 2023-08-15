@@ -178,3 +178,75 @@ FROM
     	AND s.order_date >= l.join_date
 GROUP BY 1
 ORDER BY 1;
+
+-------------------------------------------- x ------------------------------------------------
+
+-- 10. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi - how many points do customer A and B have at the end of January?
+-- Solution:
+SELECT
+	s.customer_id, 
+    SUM(CASE
+        WHEN DATE_TRUNC('week', order_date) = DATE_TRUNC('week', join_date) THEN 20*m.price
+       	ELSE 10*m.price
+    END) AS points
+FROM 
+    dannys_diner.sales s
+    INNER JOIN dannys_diner.menu m
+        ON s.product_id = m.product_id
+  	INNER JOIN dannys_diner.members l     	-- l for loyalty
+    	ON s.customer_id = l.customer_id
+    	AND s.order_date >= l.join_date
+WHERE
+	s.order_date <= '2021-01-31'
+GROUP BY 1
+ORDER BY 1;
+
+------------------------------------------ BONUS-1 ---------------------------------------------
+
+-- JOIN ALL THE THINGS
+-- Solution:
+SELECT
+	s.customer_id,
+    -- DATE(s.order_date) AS order_date,    -- Normally, this would work in most IDEs
+    TEXT(s.order_date) AS order_date,		-- This works on db-fiddle
+    m.product_name,
+    m.price,
+    CASE
+    	WHEN s.order_date >= l.join_date THEN 'Y'
+        ELSE 'N'
+    END AS member
+FROM 
+	dannys_diner.sales s
+    LEFT JOIN dannys_diner.menu m
+    	ON s.product_id = m.product_id
+    LEFT JOIN dannys_diner.members l     -- l for loyalty
+    	ON s.customer_id = l.customer_id
+ORDER BY 1, 2, 3
+
+------------------------------------------ BONUS-2 ---------------------------------------------
+
+-- RANK ALL THE THINGS
+-- Solution:
+SELECT
+	a.*,
+    CASE
+    	WHEN member = 'N' THEN NULL
+        ELSE RANK() OVER(PARTITION BY customer_id, member ORDER BY order_date) 
+    END AS ranking
+FROM
+	(SELECT
+      s.customer_id,
+      TEXT(s.order_date) AS order_date,
+      m.product_name,
+      m.price,
+      CASE
+          WHEN s.order_date >= l.join_date THEN 'Y'
+          ELSE 'N'
+      END AS member
+  FROM 
+      dannys_diner.sales s
+      LEFT JOIN dannys_diner.menu m
+          ON s.product_id = m.product_id
+    LEFT JOIN dannys_diner.members l     -- l for loyalty
+    	ON s.customer_id = l.customer_id) a
+ORDER BY 1, 2, 3
