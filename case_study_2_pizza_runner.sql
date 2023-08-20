@@ -45,23 +45,20 @@ GROUP BY 1;
 
 
 -- Q5 : How many Vegetarian and Meatlovers were ordered by each customer?
+-- Q5 : How many Vegetarian and Meatlovers were ordered by each customer?
 -- Solution:
 SELECT
-	c.customer_id,
+	customer_id,
     SUM(CASE
-    	When c.pizza_id = 1 THEN 1
+    	When pizza_id = 1 THEN 1
         ELSE 0
     END) AS meatlovers_pizza_ordered,
     SUM(CASE
-    	When c.pizza_id = 2 THEN 1
+    	When pizza_id = 2 THEN 1
         ELSE 0
     END) AS vegetarian_pizza_ordered
 FROM
-	pizza_runner.runner_orders r
-    LEFT JOIN pizza_runner.customer_orders c
-    	ON r.order_id = c.order_id
-WHERE
-	LOWER(r.cancellation) NOT LIKE '%cancel%'
+	pizza_runner.customer_orders
 GROUP BY 1;
 
 
